@@ -1,0 +1,25 @@
+const N = 2
+range T = 0..N
+
+FLAG_COUNTER      = FLAG_COUNTER[0],
+FLAG_COUNTER[f:T] = ( check[f]  -> FLAG_COUNTER[f]
+		            | when (f<N) increment -> FLAG_COUNTER[f+1]
+                    | when (f>0) decrement -> FLAG_COUNTER[f-1]
+                    ).
+
+PRODUCER = (value.increment -> value.check[v:T]
+		    -> ( when (v==1) produce -> value.decrement -> PRODUCER
+			   | when (v==2) value.decrement -> PRODUCER ) 
+           ).
+
+||PLANTATION = ( prod[i:1..2]:PRODUCER || prod[i:1..2]::value:FLAG_COUNTER).
+
+fluent CRITICAL[i:1..2] = <prod[i].produce, prod[i].value.decrement>
+
+assert MUTEX = []!(CRITICAL[1] && CRITICAL[2])
+
+progress ENTER1 = {prod[1].produce}
+
+progress ENTER2 = {prod[2].produce}
+
+assert CRITPROG = []<>(CRITICAL[1]) //si desactivo el fair choice encuentra una traza chequeando este assert
